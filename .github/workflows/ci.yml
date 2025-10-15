@@ -30,10 +30,10 @@ jobs:
         pytest --cov=calctl --cov-report=html --cov-report=xml tests/
     
     - name: Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: coverage-report
-        path: htmlcov/
+          name: coverage-report
+          path: htmlcov/
 
   lint:
     runs-on: ubuntu-latest
@@ -77,10 +77,11 @@ jobs:
         python -m build
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/
+
 
   publish:
     needs: [test, lint]

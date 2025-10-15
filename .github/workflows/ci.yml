@@ -1,0 +1,132 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -e .
+    
+    - name: Run tests
+      run: |
+        pytest --cov=calctl --cov-report=html --cov-report=xml tests/
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install flake8 black mypy
+        pip install -r requirements.txt
+        pip install -e .
+    
+    - name: Run linting
+      run: |
+        flake8 src/ --max-line-length=100 --exclude=__pycache__
+        black --check src/
+        mypy src/ --ignore-missing-imports
+
+  build:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Build distribution
+      run: |
+        pip install build
+        python -m build
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+
+  publish:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate semver tag
+      run: |
+        TAG=${GITHUB_REF#refs/tags/v}
+        if [[ ! $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid semver tag: $TAG"
+          exit 1
+        fi
+        echo "RELEASE_VERSION=$TAG" >> $GITHUB_ENV
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Run tests
+      run: |
+        pip install -r requirements.txt
+        pip install -e .
+        pytest tests/
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and test Docker image
+      run: |
+        docker build -t calctl:${{ env.RELEASE_VERSION }} .
+        docker run --rm calctl:${{ env.RELEASE_VERSION }} --help
+    
+    - name: Push to Docker Hub
+      run: |
+        docker tag calctl:${{ env.RELEASE_VERSION }} ${{ secrets.DOCKER_USERNAME }}/calctl:${{ env.RELEASE_VERSION }}
+        docker tag calctl:${{ env.RELEASE_VERSION }} ${{ secrets.DOCKER_USERNAME }}/calctl:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/calctl:${{ env.RELEASE_VERSION }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/calctl:latest

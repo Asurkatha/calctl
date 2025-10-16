@@ -358,7 +358,7 @@ def search_events(
 def get_agenda(
     date: Optional[str] = None, week: bool = False, *, db_path: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Get agenda view for a specific date or week """
+    """Get agenda view for a specific date or week"""
     if week:
         events = list_events(week=True, db_path=db_path)
         agenda = {}

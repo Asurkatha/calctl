@@ -261,8 +261,8 @@ def agenda(
 
             if agenda_data['type'] == 'day':
                 for event in agenda_data['events']:
-                    from .core import Event
-                    event_obj = Event.from_dict(event)
+                    # from .core import Event
+                    # event_obj = Event.from_dict(event)
                     typer.echo(f"{event['start_time']} - {event['title']}")
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)

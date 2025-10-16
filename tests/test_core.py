@@ -2,7 +2,6 @@ import os
 import pathlib
 import tempfile
 import pytest
-
 # make src importable
 import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))

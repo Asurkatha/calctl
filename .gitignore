@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# Byte-compiled / optimized / DLL files
+# Byte-compiled  / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
@@ -206,7 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-=======
 # Python
 __pycache__/
 *.py[cod]
@@ -226,4 +224,3 @@ build/
 # OS
 .DS_Store
 Thumbs.db
->>>>>>> 479ca78 (CalCtl)

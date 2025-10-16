@@ -1,6 +1,6 @@
 # CalCtl - Command Line Calendar Manager
 
-A powerful command-line calendar management tool that helps you organize, track, and manage your appointments and events efficiently.
+A command-line calendar management tool that helps you organize, track, and manage your appointments and events efficiently.
 
 ## Features
 

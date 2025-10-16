@@ -227,7 +227,7 @@ def delete(
                 f"at {event['start_time']}"
             )
             typer.echo(msg)
-            if not typer.confirm("Are you sure?"):
+            if not typer.confirm("Are you sure??"):
                 typer.echo("Cancelled")
                 return
 

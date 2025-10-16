@@ -38,8 +38,7 @@ def load_events(db_path: str | None = None) -> List[Dict[str, Any]]:
         return []
 
 
-def save_events(events: List[Dict[str, Any]], db_path: str | None = None
-                ) -> None:
+def save_events(events: List[Dict[str, Any]], db_path: str | None = None) -> None:
     p = _db_path(db_path)
     _ensure_parent(p)
     with p.open("w", encoding="utf-8") as f:

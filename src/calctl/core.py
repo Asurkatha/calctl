@@ -23,13 +23,13 @@ def _from_iso(s: str) -> datetime:
 def _generate_short_id() -> str:
     """Generate short memorable ID in format evt-7d3f"""
     chars = string.ascii_lowercase + string.digits
-    suffix = ''.join(secrets.choice(chars) for _ in range(4))
+    suffix = "".join(secrets.choice(chars) for _ in range(4))
     return f"evt-{suffix}"
 
 
 def _ensure_unique_id(events: List[Dict], proposed_id: str) -> str:
     """Ensure the proposed ID is unique, regenerate if needed"""
-    existing_ids = {e.get('id') for e in events}
+    existing_ids = {e.get("id") for e in events}
     while proposed_id in existing_ids:
         proposed_id = _generate_short_id()
     return proposed_id
@@ -80,15 +80,16 @@ def _parse_date_time(date_str: str, time_str: str) -> Tuple[str, str]:
     return date_part, time_part
 
 
-def _check_conflicts(events: List[Dict], new_event: Event,
-                     exclude_id: Optional[str] = None) -> List[Dict]:
+def _check_conflicts(
+    events: List[Dict], new_event: Event, exclude_id: Optional[str] = None
+) -> List[Dict]:
     """Check for scheduling conflicts with existing events"""
     conflicts = []
     new_start = new_event.get_start_datetime()
     new_end = new_event.get_end_datetime()
 
     for event in events:
-        if exclude_id and event.get('id') == exclude_id:
+        if exclude_id and event.get("id") == exclude_id:
             continue
 
         existing = Event.from_dict(event)
@@ -133,7 +134,7 @@ def add_event(
         location=location.strip() if location else None,
         description=description.strip() if description else None,
         created=now,
-        updated=now
+        updated=now,
     )
 
     if not force:
@@ -143,15 +144,18 @@ def add_event(
             for c in conflicts:
                 conflict_event = Event.from_dict(c)
                 end_time = conflict_event.get_end_datetime().strftime("%H:%M")
-                detail = (f'"{c["title"]}" '
-                          f'({conflict_event.start_time} - {end_time})')
+                detail = (
+                    f'"{c["title"]}" ' f"({conflict_event.start_time} - {end_time})"
+                )
                 conflict_details.append(detail)
-            msg = (f"Event conflicts with {', '.join(conflict_details)}. "
-                   "Use --force to schedule anyway")
+            msg = (
+                f"Event conflicts with {', '.join(conflict_details)}. "
+                "Use --force to schedule anyway"
+            )
             raise ValueError(msg)
 
     events.append(event.to_dict())
-    events.sort(key=lambda e: (e['date'], e['start_time']))
+    events.sort(key=lambda e: (e["date"], e["start_time"]))
     save_events(events, db_path)
 
     return event.to_dict()
@@ -170,7 +174,7 @@ def list_events(
 
     if today:
         today_str = datetime.now().strftime("%Y-%m-%d")
-        events = [e for e in events if e['date'] == today_str]
+        events = [e for e in events if e["date"] == today_str]
     elif week:
         now = datetime.now()
         days_until_sunday = 6 - now.weekday()
@@ -180,51 +184,51 @@ def list_events(
         week_start_str = week_start.strftime("%Y-%m-%d")
         week_end_str = week_end.strftime("%Y-%m-%d")
 
-        events = [e for e in events
-                  if week_start_str <= e['date'] <= week_end_str]
+        events = [e for e in events if week_start_str <= e["date"] <= week_end_str]
     else:
         if from_date:
             parsed_from = parse_dt(from_date).strftime("%Y-%m-%d")
-            events = [e for e in events if e['date'] >= parsed_from]
+            events = [e for e in events if e["date"] >= parsed_from]
         if to_date:
             parsed_to = parse_dt(to_date).strftime("%Y-%m-%d")
-            events = [e for e in events if e['date'] <= parsed_to]
+            events = [e for e in events if e["date"] <= parsed_to]
 
         # Only apply "today onwards" filter if no explicit date filters
         if not from_date and not to_date and not today and not week:
             today_str = datetime.now().strftime("%Y-%m-%d")
-            events = [e for e in events if e['date'] >= today_str]
+            events = [e for e in events if e["date"] >= today_str]
 
     return events
 
 
-def show_event(event_id: str, *, db_path: Optional[str] = None
-               ) -> Optional[Dict[str, Any]]:
+def show_event(
+    event_id: str, *, db_path: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """Show detailed information about a specific event"""
     events = load_events(db_path)
 
     for event in events:
-        if event['id'] == event_id:
+        if event["id"] == event_id:
             event_obj = Event.from_dict(event)
             end_time = event_obj.get_end_datetime().strftime("%H:%M")
-            conflicts = _check_conflicts(events, event_obj,
-                                         exclude_id=event_id)
+            conflicts = _check_conflicts(events, event_obj, exclude_id=event_id)
 
             result = event.copy()
-            result['end_time'] = end_time
-            result['conflicts'] = conflicts
+            result["end_time"] = end_time
+            result["conflicts"] = conflicts
             return result
 
     return None
 
 
-def delete_event(event_id: str, *, db_path: Optional[str] = None
-                 ) -> Optional[Dict[str, Any]]:
+def delete_event(
+    event_id: str, *, db_path: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """Delete an event and return deleted event info"""
     events = load_events(db_path)
 
     for i, event in enumerate(events):
-        if event['id'] == event_id:
+        if event["id"] == event_id:
             deleted_event = events.pop(i)
             save_events(events, db_path)
             return deleted_event
@@ -232,8 +236,9 @@ def delete_event(event_id: str, *, db_path: Optional[str] = None
     return None
 
 
-def delete_events_by_date(date: str, *, db_path: Optional[str] = None
-                          ) -> List[Dict[str, Any]]:
+def delete_events_by_date(
+    date: str, *, db_path: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """Delete all events on a specific date"""
     parsed_date = parse_dt(date).strftime("%Y-%m-%d")
     events = load_events(db_path)
@@ -242,7 +247,7 @@ def delete_events_by_date(date: str, *, db_path: Optional[str] = None
     remaining_events = []
 
     for event in events:
-        if event['date'] == parsed_date:
+        if event["date"] == parsed_date:
             deleted_events.append(event)
         else:
             remaining_events.append(event)
@@ -268,53 +273,53 @@ def edit_event(
     events = load_events(db_path)
 
     for event in events:
-        if event['id'] == event_id:
+        if event["id"] == event_id:
             updated_data = event.copy()
 
             if title is not None:
-                updated_data['title'] = title.strip()
+                updated_data["title"] = title.strip()
             if date is not None or time is not None:
-                current_date = updated_data['date']
-                current_time = updated_data['start_time']
+                current_date = updated_data["date"]
+                current_time = updated_data["start_time"]
                 new_date = date if date else current_date
                 new_time = time if time else current_time
-                parsed_date, parsed_time = _parse_date_time(new_date,
-                                                            new_time)
-                updated_data['date'] = parsed_date
-                updated_data['start_time'] = parsed_time
+                parsed_date, parsed_time = _parse_date_time(new_date, new_time)
+                updated_data["date"] = parsed_date
+                updated_data["start_time"] = parsed_time
             if duration is not None:
                 if duration <= 0:
                     raise ValueError("duration must be positive")
-                updated_data['duration'] = duration
+                updated_data["duration"] = duration
             if location is not None:
-                updated_data['location'] = (location.strip()
-                                            if location else None)
+                updated_data["location"] = location.strip() if location else None
             if description is not None:
-                updated_data['description'] = (description.strip()
-                                               if description else None)
+                updated_data["description"] = (
+                    description.strip() if description else None
+                )
 
             updated_event = Event.from_dict(updated_data)
-            conflicts = _check_conflicts(events, updated_event,
-                                         exclude_id=event_id)
+            conflicts = _check_conflicts(events, updated_event, exclude_id=event_id)
             if conflicts:
                 conflict_details = []
                 for c in conflicts:
                     conflict_event = Event.from_dict(c)
-                    end_time = conflict_event.get_end_datetime().strftime(
-                        "%H:%M")
-                    detail = (f'"{c["title"]}" '
-                              f'({conflict_event.start_time} - {end_time})')
+                    end_time = conflict_event.get_end_datetime().strftime("%H:%M")
+                    detail = (
+                        f'"{c["title"]}" ' f"({conflict_event.start_time} - {end_time})"
+                    )
                     conflict_details.append(detail)
-                msg = (f"Edit would create conflicts with "
-                       f"{', '.join(conflict_details)}")
+                msg = (
+                    f"Edit would create conflicts with "
+                    f"{', '.join(conflict_details)}"
+                )
                 raise ValueError(msg)
 
             # Ensure timestamp changes
             time_module.sleep(0.2)
-            updated_data['updated'] = _to_iso(datetime.now())
+            updated_data["updated"] = _to_iso(datetime.now())
             events[events.index(event)] = updated_data
 
-            events.sort(key=lambda e: (e['date'], e['start_time']))
+            events.sort(key=lambda e: (e["date"], e["start_time"]))
             save_events(events, db_path)
 
             return updated_data
@@ -323,10 +328,7 @@ def edit_event(
 
 
 def search_events(
-    query: str,
-    title_only: bool = False,
-    *,
-    db_path: Optional[str] = None
+    query: str, title_only: bool = False, *, db_path: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """Search events by title and/or description"""
     if not query.strip():
@@ -338,14 +340,14 @@ def search_events(
     results = []
     for event in events:
         if title_only:
-            searchable = (event.get('title') or '').lower()
+            searchable = (event.get("title") or "").lower()
         else:
             fields = [
-                event.get('title') or '',
-                event.get('description') or '',
-                event.get('location') or ''
+                event.get("title") or "",
+                event.get("description") or "",
+                event.get("location") or "",
             ]
-            searchable = ' '.join(fields).lower()
+            searchable = " ".join(fields).lower()
 
         if q in searchable:
             results.append(event)
@@ -354,37 +356,29 @@ def search_events(
 
 
 def get_agenda(
-    date: Optional[str] = None,
-    week: bool = False,
-    *,
-    db_path: Optional[str] = None
+    date: Optional[str] = None, week: bool = False, *, db_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """Get agenda view for a specific date or week"""
     if week:
         events = list_events(week=True, db_path=db_path)
         agenda = {}
         for event in events:
-            event_date = event['date']
+            event_date = event["date"]
             if event_date not in agenda:
                 agenda[event_date] = []
             agenda[event_date].append(event)
 
-        return {
-            'type': 'week',
-            'events_by_date': agenda,
-            'total_events': len(events)
-        }
+        return {"type": "week", "events_by_date": agenda, "total_events": len(events)}
     else:
         target_date = date if date else datetime.now().strftime("%Y-%m-%d")
         if date:
             target_date = parse_dt(date).strftime("%Y-%m-%d")
 
-        events = [e for e in load_events(db_path)
-                  if e['date'] == target_date]
+        events = [e for e in load_events(db_path) if e["date"] == target_date]
 
         return {
-            'type': 'day',
-            'date': target_date,
-            'events': events,
-            'total_events': len(events)
+            "type": "day",
+            "date": target_date,
+            "events": events,
+            "total_events": len(events),
         }

@@ -5,8 +5,13 @@ from typing import Optional, List
 import typer
 
 from .core import (
-    add_event, list_events, show_event, delete_event,
-    edit_event, search_events, get_agenda
+    add_event,
+    list_events,
+    show_event,
+    delete_event,
+    edit_event,
+    search_events,
+    get_agenda,
 )
 
 app = typer.Typer(help="calctl - A command-line calendar manager")
@@ -27,14 +32,11 @@ ctx = Context()
 @app.callback(invoke_without_command=True)
 def main(
     typer_ctx: typer.Context,
-    db: Optional[str] = typer.Option(None,
-                                     help="Path to events JSON database"),
+    db: Optional[str] = typer.Option(None, help="Path to events JSON database"),
     json_out: bool = typer.Option(False, "--json", help="Output as JSON"),
     plain: bool = typer.Option(False, "--plain", help="Plain text output"),
-    no_color: bool = typer.Option(False, "--no-color",
-                                  help="Disable colored output"),
-    version: bool = typer.Option(False, "--version", "-v",
-                                 help="Show version"),
+    no_color: bool = typer.Option(False, "--no-color", help="Disable colored output"),
+    version: bool = typer.Option(False, "--version", "-v", help="Show version"),
 ):
     """calctl - A command-line calendar manager"""
     # Set global context
@@ -67,8 +69,10 @@ def main(
         typer.echo("  --plain        Plain text output")
         typer.echo()
         typer.echo("Examples:")
-        msg = ('  calctl add --title "Meeting tomorrow at 2pm" '
-               '--date 2025-01-15 --time 14:00 --duration 60')
+        msg = (
+            '  calctl add --title "Meeting tomorrow at 2pm" '
+            "--date 2025-01-15 --time 14:00 --duration 60"
+        )
         typer.echo(msg)
         typer.echo("  calctl list --today")
         typer.echo("  calctl agenda --week")
@@ -86,8 +90,7 @@ def echo_events(events: List[dict]):
         return
 
     for event in events:
-        parts = [event['id'], event['title'], event['date'],
-                 event['start_time']]
+        parts = [event["id"], event["title"], event["date"], event["start_time"]]
         typer.echo(" | ".join(parts))
 
 
@@ -99,15 +102,19 @@ def add(
     duration: int = typer.Option(..., help="Duration in minutes"),
     location: Optional[str] = typer.Option(None, help="Location"),
     description: Optional[str] = typer.Option(None, help="Description"),
-    force: bool = typer.Option(False, "--force",
-                               help="Skip conflict validation"),
+    force: bool = typer.Option(False, "--force", help="Skip conflict validation"),
 ):
     """Add a new event"""
     try:
         event = add_event(
-            title=title, date=date, time=time, duration=duration,
-            location=location, description=description, force=force,
-            db_path=ctx.db_path
+            title=title,
+            date=date,
+            time=time,
+            duration=duration,
+            location=location,
+            description=description,
+            force=force,
+            db_path=ctx.db_path,
         )
         typer.echo(f"Added event {event['id']}")
         echo_events([event])
@@ -118,8 +125,7 @@ def add(
 
 @app.command("list")
 def list_cmd(
-    from_date: Optional[str] = typer.Option(None, "--from",
-                                            help="From date"),
+    from_date: Optional[str] = typer.Option(None, "--from", help="From date"),
     to_date: Optional[str] = typer.Option(None, "--to", help="To date"),
     today: bool = typer.Option(False, "--today", help="Today's events"),
     week: bool = typer.Option(False, "--week", help="This week's events"),
@@ -127,8 +133,11 @@ def list_cmd(
     """List events"""
     try:
         events = list_events(
-            from_date=from_date, to_date=to_date,
-            today=today, week=week, db_path=ctx.db_path
+            from_date=from_date,
+            to_date=to_date,
+            today=today,
+            week=week,
+            db_path=ctx.db_path,
         )
         echo_events(events)
     except Exception as e:
@@ -154,9 +163,9 @@ def show(
             typer.echo(f"ID: {event['id']}")
             typer.echo(f"Date: {event['date']} {event['start_time']}")
             typer.echo(f"Duration: {event['duration']} minutes")
-            if event.get('location'):
+            if event.get("location"):
                 typer.echo(f"Location: {event['location']}")
-            if event.get('description'):
+            if event.get("description"):
                 typer.echo(f"Description: {event['description']}")
             typer.echo(f"Created: {event['created']}")
             typer.echo(f"Updated: {event['updated']}")
@@ -178,9 +187,14 @@ def edit(
     """Edit an event"""
     try:
         updated = edit_event(
-            event_id, title=title, date=date, time=time,
-            duration=duration, location=location, description=description,
-            db_path=ctx.db_path
+            event_id,
+            title=title,
+            date=date,
+            time=time,
+            duration=duration,
+            location=location,
+            description=description,
+            db_path=ctx.db_path,
         )
         if updated:
             typer.echo(f"Updated event {event_id}")
@@ -208,8 +222,10 @@ def delete(
 
         # Ask for confirmation unless force
         if not force:
-            msg = (f"About to delete: {event['title']} on {event['date']} "
-                   f"at {event['start_time']}")
+            msg = (
+                f"About to delete: {event['title']} on {event['date']} "
+                f"at {event['start_time']}"
+            )
             typer.echo(msg)
             if not typer.confirm("Are you sure?"):
                 typer.echo("Cancelled")
@@ -255,12 +271,12 @@ def agenda(
         if ctx.json_output:
             typer.echo(json.dumps(agenda_data, indent=2))
         else:
-            target = agenda_data.get('date', 'week')
+            target = agenda_data.get("date", "week")
             typer.echo(f"Agenda for {target}")
             typer.echo(f"Total events: {agenda_data['total_events']}")
 
-            if agenda_data['type'] == 'day':
-                for event in agenda_data['events']:
+            if agenda_data["type"] == "day":
+                for event in agenda_data["events"]:
                     # from .core import Event
                     # event_obj = Event.from_dict(event)
                     typer.echo(f"{event['start_time']} - {event['title']}")

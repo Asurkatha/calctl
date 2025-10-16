@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import json
-import sys
-from datetime import datetime
 from typing import Optional, List
 import typer
 
 from .core import (
-    add_event, list_events, show_event, delete_event, 
+    add_event, list_events, show_event, delete_event,
     edit_event, search_events, get_agenda
 )
 
 app = typer.Typer(help="calctl - A command-line calendar manager")
+
 
 # Global context for shared options
 class Context:
@@ -20,28 +19,33 @@ class Context:
         self.json_output: bool = False
         self.plain: bool = False
 
+
 # Global context instance
 ctx = Context()
+
 
 @app.callback(invoke_without_command=True)
 def main(
     typer_ctx: typer.Context,
-    db: Optional[str] = typer.Option(None, help="Path to events JSON database"),
+    db: Optional[str] = typer.Option(None,
+                                     help="Path to events JSON database"),
     json_out: bool = typer.Option(False, "--json", help="Output as JSON"),
     plain: bool = typer.Option(False, "--plain", help="Plain text output"),
-    no_color: bool = typer.Option(False, "--no-color", help="Disable colored output"),
-    version: bool = typer.Option(False, "--version", "-v", help="Show version"),
+    no_color: bool = typer.Option(False, "--no-color",
+                                  help="Disable colored output"),
+    version: bool = typer.Option(False, "--version", "-v",
+                                 help="Show version"),
 ):
     """calctl - A command-line calendar manager"""
     # Set global context
     ctx.db_path = db
     ctx.json_output = json_out
     ctx.plain = plain
-    
+
     if version:
         typer.echo("calctl version 1.0.0")
         raise typer.Exit(0)
-    
+
     if typer_ctx.invoked_subcommand is None:
         typer.echo("calctl - A command-line calendar manager")
         typer.echo()
@@ -63,23 +67,29 @@ def main(
         typer.echo("  --plain        Plain text output")
         typer.echo()
         typer.echo("Examples:")
-        typer.echo('  calctl add --title "Meeting tomorrow at 2pm" --date 2025-01-15 --time 14:00 --duration 60')
+        msg = ('  calctl add --title "Meeting tomorrow at 2pm" '
+               '--date 2025-01-15 --time 14:00 --duration 60')
+        typer.echo(msg)
         typer.echo("  calctl list --today")
         typer.echo("  calctl agenda --week")
         raise typer.Exit(0)
+
 
 def echo_events(events: List[dict]):
     """Display events using global context"""
     if ctx.json_output:
         typer.echo(json.dumps(events, indent=2))
         return
-    
+
     if not events:
         typer.echo("No events.")
         return
-    
+
     for event in events:
-        typer.echo(f"{event['id']} | {event['title']} | {event['date']} | {event['start_time']}")
+        parts = [event['id'], event['title'], event['date'],
+                 event['start_time']]
+        typer.echo(" | ".join(parts))
+
 
 @app.command()
 def add(
@@ -89,7 +99,8 @@ def add(
     duration: int = typer.Option(..., help="Duration in minutes"),
     location: Optional[str] = typer.Option(None, help="Location"),
     description: Optional[str] = typer.Option(None, help="Description"),
-    force: bool = typer.Option(False, "--force", help="Skip conflict validation"),
+    force: bool = typer.Option(False, "--force",
+                               help="Skip conflict validation"),
 ):
     """Add a new event"""
     try:
@@ -104,9 +115,11 @@ def add(
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
 
+
 @app.command("list")
 def list_cmd(
-    from_date: Optional[str] = typer.Option(None, "--from", help="From date"),
+    from_date: Optional[str] = typer.Option(None, "--from",
+                                            help="From date"),
     to_date: Optional[str] = typer.Option(None, "--to", help="To date"),
     today: bool = typer.Option(False, "--today", help="Today's events"),
     week: bool = typer.Option(False, "--week", help="This week's events"),
@@ -114,13 +127,14 @@ def list_cmd(
     """List events"""
     try:
         events = list_events(
-            from_date=from_date, to_date=to_date, 
+            from_date=from_date, to_date=to_date,
             today=today, week=week, db_path=ctx.db_path
         )
         echo_events(events)
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
 
 @app.command()
 def show(
@@ -132,7 +146,7 @@ def show(
         if not event:
             typer.echo(f"Event {event_id} not found", err=True)
             raise typer.Exit(1)
-        
+
         if ctx.json_output:
             typer.echo(json.dumps(event, indent=2))
         else:
@@ -149,6 +163,7 @@ def show(
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
 
 @app.command()
 def edit(
@@ -177,6 +192,7 @@ def edit(
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
 
+
 @app.command()
 def delete(
     event_id: str = typer.Argument(help="Event ID"),
@@ -189,14 +205,16 @@ def delete(
         if not event:
             typer.echo(f"Event {event_id} not found", err=True)
             raise typer.Exit(1)
-        
+
         # Ask for confirmation unless force
         if not force:
-            typer.echo(f"About to delete: {event['title']} on {event['date']} at {event['start_time']}")
+            msg = (f"About to delete: {event['title']} on {event['date']} "
+                   f"at {event['start_time']}")
+            typer.echo(msg)
             if not typer.confirm("Are you sure?"):
                 typer.echo("Cancelled")
                 return
-        
+
         # Delete the event
         deleted = delete_event(event_id, db_path=ctx.db_path)
         if deleted:
@@ -207,6 +225,7 @@ def delete(
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
 
 @app.command()
 def search(
@@ -223,6 +242,7 @@ def search(
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
 
+
 @app.command()
 def agenda(
     date: Optional[str] = typer.Option(None, "--date", help="Specific date"),
@@ -231,23 +251,23 @@ def agenda(
     """Show agenda"""
     try:
         agenda_data = get_agenda(date=date, week=week, db_path=ctx.db_path)
-        
+
         if ctx.json_output:
             typer.echo(json.dumps(agenda_data, indent=2))
         else:
             target = agenda_data.get('date', 'week')
             typer.echo(f"Agenda for {target}")
             typer.echo(f"Total events: {agenda_data['total_events']}")
-            
+
             if agenda_data['type'] == 'day':
                 for event in agenda_data['events']:
                     from .core import Event
                     event_obj = Event.from_dict(event)
-                    end_time = event_obj.get_end_datetime().strftime("%H:%M")
                     typer.echo(f"{event['start_time']} - {event['title']}")
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
 
 if __name__ == "__main__":
     app()

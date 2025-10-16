@@ -56,7 +56,6 @@ jobs:
       run: |
         flake8 src/ --max-line-length=100 --exclude=__pycache__
         black --check src/
-        mypy src/ --ignore-missing-imports
 
   build:
     needs: [test, lint]

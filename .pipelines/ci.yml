@@ -1,32 +1,42 @@
 pipeline:
-  name: "Calctl Public Pipeline"
+  name: "Calctl CI Pipeline"
 
 stages:
-  - build
   - test
-  - deploy
+  - lint
+  - build
+  - publish
 
-build-dist:
-  - stage: build
-  - image: python:3.11-slim
-  - script:
-    - "python -m pip install --upgrade pip"
-    - "pip install build"
-    - "pip install -r requirements.txt"
-    - "pip install -e ."
-    - "python -m build"
-
-run-tests:
+test:
   - stage: test
   - image: python:3.11-slim
   - script:
     - "python -m pip install --upgrade pip"
     - "pip install -r requirements.txt"
     - "pip install -e ."
-    - "pytest tests/"
+    - "pytest --cov=calctl --cov-report=html --cov-report=xml tests/"
 
-deploy-preview:
-  - stage: deploy
-  - image: alpine:3.20
+lint:
+  - stage: lint
+  - image: python:3.11-slim
   - script:
-    - "echo deploy preview"
+    - "python -m pip install --upgrade pip"
+    - "pip install flake8 black mypy"
+    - "pip install -r requirements.txt"
+    - "pip install -e ."
+    - "flake8 src/ --max-line-length=100 --exclude=__pycache__"
+    - "black --check src/"
+
+build:
+  - stage: build
+  - image: python:3.11-slim
+  - script:
+    - "python -m pip install --upgrade pip"
+    - "pip install build"
+    - "python -m build"
+
+publish:
+  - stage: publish
+  - image: docker:27-cli
+  - script:
+    - "echo publish step placeholder"

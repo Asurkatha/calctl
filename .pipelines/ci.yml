@@ -1,0 +1,32 @@
+pipeline:
+  name: "Calctl Public Pipeline"
+
+stages:
+  - build
+  - test
+  - deploy
+
+build-dist:
+  - stage: build
+  - image: python:3.11-slim
+  - script:
+    - "python -m pip install --upgrade pip"
+    - "pip install build"
+    - "pip install -r requirements.txt"
+    - "pip install -e ."
+    - "python -m build"
+
+run-tests:
+  - stage: test
+  - image: python:3.11-slim
+  - script:
+    - "python -m pip install --upgrade pip"
+    - "pip install -r requirements.txt"
+    - "pip install -e ."
+    - "pytest tests/"
+
+deploy-preview:
+  - stage: deploy
+  - image: alpine:3.20
+  - script:
+    - "echo deploy preview"

@@ -1,0 +1,21 @@
+pipeline:
+  name: "Calctl Parallel Demo"
+
+stages:
+  - build
+
+job-a:
+  - stage: build
+  - image: python:3.11-slim
+  - script:
+    - echo "job-a start"
+    - sleep 5
+    - echo "job-a done"
+
+job-b:
+  - stage: build
+  - image: python:3.11-slim
+  - script:
+    - echo "job-b start"
+    - sleep 5
+    - echo "job-b done"
